@@ -1,0 +1,26 @@
+resource "aws_subnet" "private" {
+  # TODO: var.zones 를 순회하며 private subnet을 생성
+
+  tags = {
+    Name = "${var.name}-subnet-private-${count.index}"
+  }
+}
+
+# private 서브넷은 default route table 을 사용하면 igw 에 붙기 때문에 자유로운 외부 통신이 가능하다는 문제가 있음
+# 따라서, private 서브넷은 route table을 따로 만들어서 관리를 개별적으로 해주는게 좋음.
+resource "aws_route_table" "private_route_table" {
+  # TODO: private 서브넷 갯수만큼 라우팅 테이블을 만들어서 관리
+
+  tags = {
+    Name = "${var.name}-route-table-private-${count.index}"
+  }
+}
+
+resource "aws_route_table_association" "route_table_association_private" {
+  # TODO: private 서브넷에 private route table을 연결
+}
+
+
+resource "aws_route" "private_nat_route" {
+  # TODO: private 서브넷에 NAT GW로의 모든 트래픽(0.0.0.0/0)을 허용하는 route를 추가
+}
