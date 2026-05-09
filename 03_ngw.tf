@@ -1,0 +1,27 @@
+resource "aws_nat_gateway" "nat_gw" {
+  # TODO: var.zones 를 순회하며 NAT GW를 생성
+  # NAT GW는 AZ 수 만큼 만들어줘야 고가용성이 유지 됨
+  count = length(var.zones)
+
+  allocation_id = aws_eip.nat_gw[count.index].id
+  subnet_id = aws_subnet.public[count.index].id
+
+  tags = {
+    Name = "${var.name}-nat-gw-${count.index}"
+  }
+}
+
+resource "aws_eip" "nat_gw" {
+  # NAT GW 갯수 만큼 EIP 할당
+  count = length(var.zones)
+
+  # NAT GW용 EIP 할당 하기 전에, 존재하는지 확인해서 삭제하고 새로만드는 역할
+  # 실행할때마다 매번 새로붙이는 것은 아니고, 없으면 만드는 역할도 수행
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  tags = {
+    Name = "${var.name}-nat-eip-${count.index}"
+  }
+}
