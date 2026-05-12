@@ -1,8 +1,8 @@
 resource "aws_subnet" "database" {
-  count = length(var.zones)
-  vpc_id = aws_vpc.main.id
-  cidr_block = cidrsubnet(var.vpc_cidr, 8, length(var.zones) + length(var.zones) + count.index)
-  availability_zone = element(var.zones, count.index)
+  count                   = length(var.zones)
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = cidrsubnet(var.vpc_cidr, 8, length(var.zones) + length(var.zones) + count.index)
+  availability_zone       = element(var.zones, count.index)
   map_public_ip_on_launch = false
   tags = {
     Name = "${var.name}-subnet-private-db-${count.index}"
@@ -10,7 +10,7 @@ resource "aws_subnet" "database" {
 }
 
 resource "aws_route_table" "database_route_table" {
-  count = length(var.zones)
+  count  = length(var.zones)
   vpc_id = aws_vpc.main.id
   tags = {
     Name = "${var.name}-subnet-private-db-route-table-${count.index}"
@@ -19,7 +19,7 @@ resource "aws_route_table" "database_route_table" {
 # DB서브넷은 외부로 연결할 필요가 없기 때문에 NAT GW 를 붙이지 않습니다.
 
 resource "aws_route_table_association" "database" {
-  count = length(var.zones)
-  subnet_id = aws_subnet.database[count.index].id
+  count          = length(var.zones)
+  subnet_id      = aws_subnet.database[count.index].id
   route_table_id = aws_route_table.database_route_table[count.index].id
 }

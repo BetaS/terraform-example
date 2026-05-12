@@ -3,16 +3,16 @@ locals {
 }
 
 
-resource aws_cloudwatch_log_group "web-server" {
+resource "aws_cloudwatch_log_group" "web-server" {
   name              = "/ecs/${var.name}-web-server"
   retention_in_days = 7
   tags = {
-    Name        = "${var.name}-web-server"
+    Name = "${var.name}-web-server"
   }
 }
 
 resource "aws_ecr_repository" "web-server" {
-  name = "${var.name}-web-server"
+  name                 = "${var.name}-web-server"
   image_tag_mutability = "MUTABLE"
   image_scanning_configuration {
     scan_on_push = false
@@ -20,26 +20,26 @@ resource "aws_ecr_repository" "web-server" {
 }
 
 resource "aws_ecs_task_definition" "web-server" {
-  family = "${var.name}-web-server"
+  family       = "${var.name}-web-server"
   network_mode = "awsvpc"
-  cpu = 512  # 0.5vCPU
-  memory = 1024  # 1GB RAM
+  cpu          = 512  # 0.5vCPU
+  memory       = 1024 # 1GB RAM
   lifecycle {
     ignore_changes = [container_definitions]
   }
   runtime_platform {
-    # graviton 쓰게끔 arm64
-    cpu_architecture = "ARM64"
+    # amd64/x86_64 이미지 사용
+    cpu_architecture        = "X86_64"
     operating_system_family = "LINUX"
   }
   requires_compatibilities = ["FARGATE"]
-  task_role_arn = aws_iam_role.task_role_web.arn
-  execution_role_arn = aws_iam_role.execution_role.arn
+  task_role_arn            = aws_iam_role.task_role_web.arn
+  execution_role_arn       = aws_iam_role.execution_role.arn
   container_definitions = jsonencode([
     {
-      name         = "${var.name}-web-server"
-      image        = "${aws_ecr_repository.web-server.repository_url}:latest"
-      networkMode  = "awsvpc"
+      name        = "${var.name}-web-server"
+      image       = "${aws_ecr_repository.web-server.repository_url}:latest"
+      networkMode = "awsvpc"
       portMappings = [
         {
           name          = "http",
@@ -57,7 +57,7 @@ resource "aws_ecs_task_definition" "web-server" {
           "awslogs-stream-prefix" = "ecs"
         }
       }
-    }])
+  }])
 }
 
 resource "aws_ecs_service" "web-server" {
@@ -70,13 +70,13 @@ resource "aws_ecs_service" "web-server" {
   # 4. 네트워크 설정을 해주고
   # 5. 로드밸런서와 연결하고
   # 6. 용량 전략(FARGATE_SPOT)을 설정한다.
-  cluster = aws_ecs_cluster.cluster.id
-  task_definition = aws_ecs_task_definition.web-server.arn
-  desired_count = 0  # 처음에 0으로 시작하고, 가동 준비가 완료되면 직접 1로 변경해준다.
+  cluster              = aws_ecs_cluster.cluster.id
+  task_definition      = aws_ecs_task_definition.web-server.arn
+  desired_count        = 0 # 처음에 0으로 시작하고, 가동 준비가 완료되면 직접 1로 변경해준다.
   force_new_deployment = true
   network_configuration {
-    security_groups = [aws_security_group.web-server.id]
-    subnets = aws_subnet.private[*].id
+    security_groups  = [aws_security_group.web-server.id]
+    subnets          = aws_subnet.private[*].id
     assign_public_ip = false
   }
   load_balancer {
@@ -87,8 +87,8 @@ resource "aws_ecs_service" "web-server" {
 
   capacity_provider_strategy {
     capacity_provider = "FARGATE_SPOT"
-    base = 1
-    weight = 1
+    base              = 1
+    weight            = 1
   }
 
   deployment_circuit_breaker {
@@ -101,7 +101,7 @@ resource "aws_ecs_service" "web-server" {
   }
 }
 
-resource aws_security_group "web-server" {
+resource "aws_security_group" "web-server" {
   name   = "ecs-task-${var.name}-web-server-sg"
   vpc_id = aws_vpc.main.id
 
@@ -113,8 +113,15 @@ resource aws_security_group "web-server" {
     security_groups = [aws_security_group.alb.id]
   }
 
-  tags   = {
-      Name = "ecs-task-${var.name}-web-server-sg"
+  egress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "ecs-task-${var.name}-web-server-sg"
   }
 }
 
@@ -122,25 +129,25 @@ resource "aws_security_group_rule" "lb_to_web_server_egress" {
   security_group_id = aws_security_group.alb.id
   # TODO: ALB에서 API ECS 태스크로의 tcp 트래픽 egress을 허용
 
-  type = "egress"
-  from_port       = local.web_port
-  to_port         = local.web_port
-  protocol        = "tcp"
+  type                     = "egress"
+  from_port                = local.web_port
+  to_port                  = local.web_port
+  protocol                 = "tcp"
   source_security_group_id = aws_security_group.web-server.id
 }
 
 resource "aws_lb_target_group" "web-server" {
-  name                  = "alb-tg-${var.name}-web-server"
+  name   = "alb-tg-${var.name}-web-server"
   vpc_id = aws_vpc.main.id
 
   # TODO: lb target group 생성
   # 1. listen port 등록
   # 2. health check 방식 설정
   # 3. deregistration delay 설정 (30s로 설정해야 spot instance가 SIGTERM을 받았을 때, 컨테이너가 종료되기 전에 ALB에서 먼저 제거되도록 설정)
-  port     = local.web_port
-  protocol              = "HTTP"
-  target_type           = "ip"
-  deregistration_delay  = 30  # 중요 spot instance가 SIGTERM을 받았을 때, 컨테이너가 종료되기 전에 ALB에서 먼저 제거되도록 설정
+  port                 = local.web_port
+  protocol             = "HTTP"
+  target_type          = "ip"
+  deregistration_delay = 30 # 중요 spot instance가 SIGTERM을 받았을 때, 컨테이너가 종료되기 전에 ALB에서 먼저 제거되도록 설정
 
   health_check {
     interval            = 120
@@ -156,9 +163,9 @@ resource "aws_lb_target_group" "web-server" {
   }
 }
 
-resource aws_lb_listener_rule "web-server" {
+resource "aws_lb_listener_rule" "web-server" {
   listener_arn = aws_lb_listener.main.arn
-  priority     = 100
+  priority     = 101
 
   # TODO: 특정 경로 (/*) 일때 ALB -> API ECS 태스크로의 tcp 트래픽 forward 설정
   action {
@@ -168,7 +175,7 @@ resource aws_lb_listener_rule "web-server" {
 
   condition {
     path_pattern {
-        values = ["/", "/*"]
+      values = ["/", "/*"]
     }
   }
 }

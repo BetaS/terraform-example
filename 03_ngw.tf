@@ -4,7 +4,7 @@ resource "aws_nat_gateway" "nat_gw" {
   count = length(var.zones)
 
   allocation_id = aws_eip.nat_gw[count.index].id
-  subnet_id = aws_subnet.public[count.index].id
+  subnet_id     = aws_subnet.public[count.index].id
 
   tags = {
     Name = "${var.name}-nat-gw-${count.index}"

@@ -1,17 +1,17 @@
 variable "name" {
-  type = string
+  type        = string
   description = "생성할 리소스 이름"
-  default = "example"
+  default     = "example"
 }
 
 variable "vpc_cidr" {
-  type = string
+  type        = string
   description = "VPC CIDR 블록"
-  default = "10.100.0.0/16"
+  default     = "10.100.0.0/16"
 }
 
 variable "zones" {
-  type = list(string)
+  type        = list(string)
   description = "생성할 리전 리스트"
-  default = ["ap-northeast-2a", "ap-northeast-2c"]
+  default     = ["ap-northeast-2a", "ap-northeast-2c"]
 }

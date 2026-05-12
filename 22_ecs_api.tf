@@ -2,16 +2,16 @@ locals {
   api_port = 7777
 }
 
-resource aws_cloudwatch_log_group "api-server" {
+resource "aws_cloudwatch_log_group" "api-server" {
   name              = "/ecs/${var.name}-api-server"
   retention_in_days = 7
   tags = {
-    Name        = "${var.name}-api-server"
+    Name = "${var.name}-api-server"
   }
 }
 
 resource "aws_ecr_repository" "api-server" {
-  name = "${var.name}-api-server"
+  name                 = "${var.name}-api-server"
   image_tag_mutability = "MUTABLE"
   image_scanning_configuration {
     scan_on_push = false
@@ -19,26 +19,29 @@ resource "aws_ecr_repository" "api-server" {
 }
 
 resource "aws_ecs_task_definition" "api-server" {
-  family = "${var.name}-api-server"
+  family       = "${var.name}-api-server"
   network_mode = "awsvpc"
-  cpu = 512  # 0.5vCPU
-  memory = 1024  # 1GB RAM
-  lifecycle {
-    ignore_changes = [container_definitions]
-  }
+  cpu          = 512  # 0.5vCPU
+  memory       = 1024 # 1GB RAM
   runtime_platform {
-    # graviton 쓰게끔 arm64
-    cpu_architecture = "ARM64"
+    # amd64/x86_64 이미지 사용
+    cpu_architecture        = "X86_64"
     operating_system_family = "LINUX"
   }
   requires_compatibilities = ["FARGATE"]
-  task_role_arn = aws_iam_role.task_role_api.arn
-  execution_role_arn = aws_iam_role.execution_role.arn
+  task_role_arn            = aws_iam_role.task_role_api.arn
+  execution_role_arn       = aws_iam_role.execution_role.arn
   container_definitions = jsonencode([
     {
-      name         = "${var.name}-api-server"
-      image        = "${aws_ecr_repository.api-server.repository_url}:latest"
-      networkMode  = "awsvpc"
+      name        = "${var.name}-api-server"
+      image       = "${aws_ecr_repository.api-server.repository_url}:latest"
+      networkMode = "awsvpc"
+      environment = [
+        {
+          name  = "RDS_SECRET_ARN"
+          value = aws_secretsmanager_secret.rds.arn
+        }
+      ]
       portMappings = [
         {
           name          = "http",
@@ -56,7 +59,7 @@ resource "aws_ecs_task_definition" "api-server" {
           "awslogs-stream-prefix" = "ecs"
         }
       }
-    }])
+  }])
 }
 
 resource "aws_ecs_service" "api-server" {
@@ -69,13 +72,13 @@ resource "aws_ecs_service" "api-server" {
   # 4. 네트워크 설정을 해주고
   # 5. 로드밸런서와 연결하고
   # 6. 용량 전략(FARGATE_SPOT)을 설정한다.
-  cluster = aws_ecs_cluster.cluster.id
-  task_definition = aws_ecs_task_definition.api-server.arn
-  desired_count = 0  # 처음에 0으로 시작하고, 가동 준비가 완료되면 직접 1로 변경해준다.
+  cluster              = aws_ecs_cluster.cluster.id
+  task_definition      = aws_ecs_task_definition.api-server.arn
+  desired_count        = 0 # 처음에 0으로 시작하고, 가동 준비가 완료되면 직접 1로 변경해준다.
   force_new_deployment = true
   network_configuration {
-    security_groups = [aws_security_group.api-server.id]
-    subnets = aws_subnet.private[*].id
+    security_groups  = [aws_security_group.api-server.id]
+    subnets          = aws_subnet.private[*].id
     assign_public_ip = false
   }
   load_balancer {
@@ -86,8 +89,8 @@ resource "aws_ecs_service" "api-server" {
 
   capacity_provider_strategy {
     capacity_provider = "FARGATE_SPOT"
-    base = 1
-    weight = 1
+    base              = 1
+    weight            = 1
   }
 
   deployment_circuit_breaker {
@@ -100,7 +103,7 @@ resource "aws_ecs_service" "api-server" {
   }
 }
 
-resource aws_security_group "api-server" {
+resource "aws_security_group" "api-server" {
   name   = "ecs-task-${var.name}-api-server-sg"
   vpc_id = aws_vpc.main.id
 
@@ -112,17 +115,13 @@ resource aws_security_group "api-server" {
     security_groups = [aws_security_group.alb.id]
   }
 
-  tags   = {
-      Name = "ecs-task-${var.name}-api-server-sg"
+  egress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
-}
 
-# API ECS 태스크에만 부착 — RDS는 서브넷 CIDR이 아니라 이 SG를 가진 ENI(워크로드 식별)에서만 5432 허용
-resource "aws_security_group" "ecs_api_rds_client" {
-  name   = "${var.name}-ecs-api-rds-client-sg"
-  vpc_id = aws_vpc.main.id
-
-  # TODO: API ECS 태스크에서 RDS로의 tcp 트래픽을 허용
   egress {
     from_port       = 5432
     to_port         = 5432
@@ -131,7 +130,7 @@ resource "aws_security_group" "ecs_api_rds_client" {
   }
 
   tags = {
-    Name = "${var.name}-ecs-api-rds-client-sg"
+    Name = "ecs-task-${var.name}-api-server-sg"
   }
 }
 
@@ -139,29 +138,29 @@ resource "aws_security_group_rule" "lb_to_api_server_egress" {
   security_group_id = aws_security_group.alb.id
   # TODO: ALB에서 API ECS 태스크로의 tcp 트래픽 egress을 허용
 
-  type = "egress"
-  from_port       = local.api_port
-  to_port         = local.api_port
-  protocol        = "tcp"
+  type                     = "egress"
+  from_port                = local.api_port
+  to_port                  = local.api_port
+  protocol                 = "tcp"
   source_security_group_id = aws_security_group.api-server.id
 }
 
 resource "aws_lb_target_group" "api-server" {
-  name                  = "alb-tg-${var.name}-api-server"
+  name   = "alb-tg-${var.name}-api-server"
   vpc_id = aws_vpc.main.id
 
   # TODO: lb target group 생성
   # 1. listen port 등록
   # 2. health check 방식 설정
   # 3. deregistration delay 설정 (30s로 설정해야 spot instance가 SIGTERM을 받았을 때, 컨테이너가 종료되기 전에 ALB에서 먼저 제거되도록 설정)
-  port     = local.api_port
-  protocol              = "HTTP"
-  target_type           = "ip"
-  deregistration_delay  = 30  # 중요 spot instance가 SIGTERM을 받았을 때, 컨테이너가 종료되기 전에 ALB에서 먼저 제거되도록 설정
+  port                 = local.api_port
+  protocol             = "HTTP"
+  target_type          = "ip"
+  deregistration_delay = 30 # 중요 spot instance가 SIGTERM을 받았을 때, 컨테이너가 종료되기 전에 ALB에서 먼저 제거되도록 설정
 
   health_check {
     interval            = 120
-    path                = "/health"
+    path                = "/"
     timeout             = 60
     matcher             = "200-299"
     healthy_threshold   = 5
@@ -173,7 +172,7 @@ resource "aws_lb_target_group" "api-server" {
   }
 }
 
-resource aws_lb_listener_rule "api-server" {
+resource "aws_lb_listener_rule" "api-server" {
   listener_arn = aws_lb_listener.main.arn
   priority     = 100
 
@@ -185,7 +184,7 @@ resource aws_lb_listener_rule "api-server" {
 
   condition {
     path_pattern {
-        values = ["/api/", "/api/*"]
+      values = ["/api/", "/api/*"]
     }
   }
 }
@@ -201,6 +200,25 @@ resource "aws_iam_role" "task_role_api" {
         Principal = {
           Service = "ecs-tasks.amazonaws.com"
         }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "task_role_api_rds_secret" {
+  name = "ecsTaskRole-${var.name}-api-rds-secret"
+  role = aws_iam_role.task_role_api.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = aws_secretsmanager_secret.rds.arn
       }
     ]
   })
