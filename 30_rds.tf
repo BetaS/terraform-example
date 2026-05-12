@@ -9,7 +9,8 @@ resource "aws_db_instance" "rds" {
   multi_az               = length(var.zones) > 1
   vpc_security_group_ids = [aws_security_group.rds.id]
   db_subnet_group_name   = aws_db_subnet_group.main.name
-
+  skip_final_snapshot    = true
+  
   tags = {
     Name = "${var.name}-rds"
   }
