@@ -1,6 +1,10 @@
 resource "aws_nat_gateway" "nat_gw" {
   # TODO: var.zones 를 순회하며 NAT GW를 생성
   # NAT GW는 AZ 수 만큼 만들어줘야 고가용성이 유지 됨
+  count = length(var.zones)
+
+  allocation_id = aws_eip.nat_gw[count.index].id
+  subnet_id     = aws_subnet.public[count.index].id
 
   tags = {
     Name = "${var.name}-nat-gw-${count.index}"

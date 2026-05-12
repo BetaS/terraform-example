@@ -2,6 +2,7 @@ locals {
   api_port = 7777
 }
 
+# 힌트: 여기 일부 리소스는 Terraform 블록 문법 자체를 직접 완성해야 함
 resource aws_cloudwatch_log_group "api-server" {
   name              = "/ecs/${var.name}-api-server"
   retention_in_days = 7
@@ -69,6 +70,7 @@ resource "aws_ecs_service" "api-server" {
   # 4. 네트워크 설정을 해주고
   # 5. 로드밸런서와 연결하고
   # 6. 용량 전략(FARGATE_SPOT)을 설정한다.
+  # 힌트: ecs_service에서 자주 쓰는 상위 속성과 nested block을 직접 찾아서 조합
 
   deployment_circuit_breaker {
     enable   = true
@@ -85,6 +87,7 @@ resource aws_security_group "api-server" {
   vpc_id = aws_vpc.main.id
 
   # TODO: ALB -> API ECS 태스크에 들어오는 tcp 트래픽을 허용
+  # 힌트: ingress는 ALB SG에서 api_port로, egress는 외부 이미지/로그 전송을 위해 열어둘 것
 
   tags   = {
       Name = "ecs-task-${var.name}-api-server-sg"
@@ -97,6 +100,7 @@ resource "aws_security_group" "ecs_api_rds_client" {
   vpc_id = aws_vpc.main.id
 
   # TODO: API ECS 태스크에서 RDS로의 tcp 트래픽을 허용
+  # 힌트: DB 포트 5432로 나가는 egress 규칙을 별도 SG에 둬서 역할을 분리
 
   tags = {
     Name = "${var.name}-ecs-api-rds-client-sg"
@@ -106,6 +110,7 @@ resource "aws_security_group" "ecs_api_rds_client" {
 resource "aws_security_group_rule" "lb_to_api_server_egress" {
   security_group_id = aws_security_group.alb.id
   # TODO: ALB에서 API ECS 태스크로의 tcp 트래픽 egress을 허용
+  # 힌트: SG rule 리소스에서는 어떤 SG를 기준으로 규칙을 추가하는지와 반대편 SG를 잘 구분
 }
 
 resource "aws_lb_target_group" "api-server" {
@@ -115,6 +120,7 @@ resource "aws_lb_target_group" "api-server" {
   # 1. listen port 등록
   # 2. health check 방식 설정
   # 3. deregistration delay 설정 (30s로 설정해야 spot instance가 SIGTERM을 받았을 때, 컨테이너가 종료되기 전에 ALB에서 먼저 제거되도록 설정)
+  # 힌트: Fargate 태스크를 직접 붙일 것이므로 target type, health check path, deregistration delay를 고민
 
   lifecycle {
     create_before_destroy = true
@@ -126,6 +132,7 @@ resource aws_lb_listener_rule "api-server" {
   priority     = 100
 
   # TODO: 특정 경로 (/api/*) 일때 ALB -> API ECS 태스크로의 tcp 트래픽 forward 설정
+  # 힌트: action 블록은 target group으로 forward, condition 블록은 path_pattern 사용
 }
 
 resource "aws_iam_role" "task_role_api" {

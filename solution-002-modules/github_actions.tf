@@ -1,3 +1,7 @@
+data "aws_iam_role" "execution_role" {
+  name = "ecsTaskExecutionRole"
+}
+
 resource "aws_iam_openid_connect_provider" "github" {
   url = "https://token.actions.githubusercontent.com"
 
@@ -24,9 +28,13 @@ resource "aws_iam_role" "github_actions" {
         Action = "sts:AssumeRoleWithWebIdentity",
         Condition = {
           StringLike = {
-            # TODO: 여기에 원하는 GitHub 저장소와 브랜치를 설정
+            # 여기에 원하는 GitHub 저장소와 브랜치를 설정
             # 예: "repo:${repo 소유자 계정명}/${repo 이름}:ref:refs/heads/${branch name}"
             "token.actions.githubusercontent.com:sub" = [
+              "repo:BetaS/flask-docker-example:ref:refs/heads/*",
+              "repo:BetaS/react-docker-example:ref:refs/heads/*",
+              "repo:BetaS/flask-docker-example:environment:*",
+              "repo:BetaS/react-docker-example:environment:*"
             ]
           }
         }
@@ -65,7 +73,11 @@ resource "aws_iam_policy" "github_actions" {
           "Effect": "Allow",
           "Action": "iam:PassRole",
           "Resource": [
-            # TODO: 앞서 생성한 역할들의 taskRole, taskExecutionRole ARN을 추가
+            data.aws_iam_role.execution_role.arn,
+            module.dev-api-server.task_role.arn,
+            module.dev-web-server.task_role.arn,
+            module.prod-api-server.task_role.arn,
+            module.prod-web-server.task_role.arn,
           ]
         }
         ]

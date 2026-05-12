@@ -1,5 +1,6 @@
 resource "aws_subnet" "public" {
   # TODO: var.zones 를 순회하며 public subnet을 생성
+  # 힌트: count, count.index, cidrsubnet 함수, availability_zone, map_public_ip_on_launch 사용
 
   tags = {
     Name = "${var.name}-subnet-public-${count.index}"
@@ -8,4 +9,5 @@ resource "aws_subnet" "public" {
 
 resource "aws_route_table_association" "public" {
   # TODO: public 서브넷에 vpc default routing table을 연결
+  # 힌트: 같은 count를 사용하고 subnet_id와 default route table id를 연결
 }

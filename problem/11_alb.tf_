@@ -4,6 +4,7 @@ resource "aws_lb" "main" {
   load_balancer_type = "application"
   
   # TODO: ALB의 보안 그룹과 서브넷 연결
+  # 힌트: ALB SG 하나와 public subnet 전체를 연결
   # TODO: public subnet 모두에 골고루 배치되도록 서브넷 연결
 
   tags = {
@@ -13,4 +14,5 @@ resource "aws_lb" "main" {
 
 resource "aws_lb_listener" "main" {
   # TODO: ALB에 기본 80 포트 / 아무 rule 과 매칭 안되었을때 403 에러를 띄워 임의 접근을 차단
+  # 힌트: HTTP 80 리스너를 만들고, 기본 동작은 fixed-response 403
 }

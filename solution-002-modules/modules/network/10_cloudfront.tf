@@ -1,8 +1,8 @@
 resource "aws_cloudfront_distribution" "main" {
-  provider = # TODO: 앞서 정의한 global 프로바이더 사용
+  provider = aws.global
   origin {
     # Cloudfront가 ALB를 오리진으로 사용하도록 설정 -> alb의 dns_name을 사용
-    domain_name = # TODO: ALB의 DNS 이름 불러오기
+    domain_name = aws_lb.main.dns_name
     origin_id   = "internalALB"
 
     custom_origin_config {
@@ -46,6 +46,9 @@ resource "aws_cloudfront_distribution" "main" {
   viewer_certificate {
     cloudfront_default_certificate = true
   }
+
+  # CloudFront와 WAF의 연결을 위한 설정
+  web_acl_id = aws_wafv2_web_acl.main.arn
 
   tags = {
     Name = "${var.name}-cloudfront"
