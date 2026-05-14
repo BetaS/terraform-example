@@ -7,7 +7,6 @@ resource "aws_ecs_task_definition" "service" {
     ignore_changes = [container_definitions]
   }
   runtime_platform {
-    # solution-001-3tier(api/web)와 동일하게 x86 Fargate 이미지 가정
     cpu_architecture        = "X86_64"
     operating_system_family = "LINUX"
   }

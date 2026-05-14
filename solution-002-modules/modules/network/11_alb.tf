@@ -4,7 +4,7 @@ resource "aws_lb" "main" {
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
   # concat으로 default & public 모두에 골고루 배치되도록
-  subnets = [for x in aws_subnet.public : x.id] # aws_subnet.public[*].id
+  subnets = length(aws_subnet.public) > 1 ? [for x in aws_subnet.public : x.id] : [aws_subnet.default.id, aws_subnet.public[0].id] # aws_subnet.public[*].id
 
   tags = {
     Name = "${var.name}-alb"
