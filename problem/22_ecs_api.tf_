@@ -54,6 +54,12 @@ resource "aws_ecs_task_definition" "api-server" {
           appProtocol   = "http"
         }
       ]
+      environment = [
+        {
+          name  = "RDS_SECRET_ARN"
+          value = aws_secretsmanager_secret.rds.arn
+        }
+      ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
