@@ -1,9 +1,12 @@
+# ALB 전용 보안 그룹. 인터넷에서 ALB 리스너(HTTP/HTTPS)로 들어오는 트래픽만 허용한다.
 resource "aws_security_group" "alb" {
-  name = "${var.name}-alb-sg"
-  # 힌트: 이 SG는 VPC 안에 생성되어야 함
-  
-  # TODO: ALB에 들어오는 80, 443 포트의 모든 ingress 트래픽을 허용
-  # 힌트: ingress 블록을 2개 만들거나 규칙을 일반화해서 80/443을 열어둘 것
+  name   = "${var.name}-alb-sg"
+  vpc_id = # TODO: 이 SG가 소속될 VPC ID
+
+  # TODO: 80포트에 대한 ingress 블록 정의
+  # TODO: 443포트에 대한 ingress 블록 정의
+
+  # 각 alb target group으로의 egress정의는 22_ecs_*.tf에서 별도 정의 예정
 
   tags = {
     Name = "${var.name}-alb-sg"

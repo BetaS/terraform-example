@@ -14,6 +14,7 @@ resource "aws_cloudwatch_log_group" "web-server" {
 resource "aws_ecr_repository" "web-server" {
   name                 = "${var.name}-web-server"
   image_tag_mutability = "MUTABLE"
+  force_delete = true
   image_scanning_configuration {
     scan_on_push = false
   }

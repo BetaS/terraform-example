@@ -1,6 +1,10 @@
 resource "aws_subnet" "public" {
-  # TODO: var.zones 를 순회하며 public subnet을 생성
-  # 힌트: count, count.index, cidrsubnet 함수, availability_zone, map_public_ip_on_launch 사용
+  count = # TODO: var.zones 를 순회하며 public subnet을 생성
+  vpc_id = # TODO: 00_vpc.tf 에서 정의된 
+  cidr_block = # TODO: count를 순회하며 갯수만큼 cidr block을 만들어 줘야 함
+
+  availability_zone       = # TODO: var.zones 에서 count.index에 해당하는 zone name을 가져온다.
+  map_public_ip_on_launch = # TODO: public subnet일때는 어떤 옵션으로 해야할까? true / false
 
   tags = {
     Name = "${var.name}-subnet-public-${count.index}"

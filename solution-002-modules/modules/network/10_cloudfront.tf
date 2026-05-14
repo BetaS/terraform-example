@@ -19,8 +19,8 @@ resource "aws_cloudfront_distribution" "main" {
   # 100 class -> 미국, 유럽 -> 제일 쌈, 한국에서 테스트할때 쪼금 느리다는 문제, 개발 환경 100
   # 200 class -> 미국, 유럽, 아시아 (한국 포함), 가장 밸런스 좋은 형태, 운영 환경에서는 200
   # 300 class -> 미국, 유럽, 아시아, 남미, 아프리카 -> 제일 비쌈
-  price_class         = "PriceClass_200"
-  http_version        = "http2"
+  price_class  = "PriceClass_200"
+  http_version = "http2"
 
   default_cache_behavior {
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]

@@ -16,7 +16,7 @@ output "username" {
 
 output "password" {
   value     = random_password.rds.result
-  sensitive = true  # 비밀번호는 민감한 정보이므로 출력하지 않도록 설정
+  sensitive = true # 비밀번호는 민감한 정보이므로 출력하지 않도록 설정
 }
 
 output "database" {
@@ -29,4 +29,9 @@ output "security_group" {
 
 output "subnet_ids" {
   value = aws_subnet.database[*].id
+}
+
+output "secret_arn" {
+  value       = aws_secretsmanager_secret.rds.arn
+  description = "RDS 연결 정보 Secrets Manager ARN (ECS task env·IAM에 사용)"
 }

@@ -1,8 +1,3 @@
-data "aws_iam_role" "execution_role" {
-  name = "ecsTaskExecutionRole"
-}
-
-
 resource "aws_iam_role" "task_role" {
   name = "ecsTaskRole-${var.env}-${var.name}"
   assume_role_policy = jsonencode({
@@ -21,7 +16,22 @@ resource "aws_iam_role" "task_role" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "task_role" {
-  role = aws_iam_role.task_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+# Task execution 권한은 execution_role(루트에서 생성·전달)에 두고, task_role은 앱 전용(예: Secrets 읽기)만 부여
+resource "aws_iam_role_policy" "task_rds_secret" {
+  name  = "ecsTaskRole-${var.env}-${var.name}-rds-secret"
+  role  = aws_iam_role.task_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = var.rds_secret_arn
+      }
+    ]
+  })
 }

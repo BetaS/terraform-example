@@ -21,3 +21,8 @@ output "lb_listener_arn" {
 output "nat_gw_ips" {
   value = aws_nat_gateway.nat_gw[*].id
 }
+
+output "cloudfront_domain_name" {
+  value       = aws_cloudfront_distribution.main.domain_name
+  description = "001 output.tf의 cloudfront_url과 동일 용도"
+}

@@ -22,22 +22,27 @@ resource "aws_ecr_repository" "api-server" {
 resource "aws_ecs_task_definition" "api-server" {
   family = "${var.name}-api-server"
   network_mode = "awsvpc"
-  cpu = 512  # 0.5vCPU
-  memory = 1024  # 1GB RAM
+  cpu = # TODO: 0.5vCPU
+  memory = # TODO: 1GB RAM
   lifecycle {
     ignore_changes = [container_definitions]
   }
   runtime_platform {
-    # graviton 쓰게끔 arm64
-    cpu_architecture = "ARM64"
+    # 참고 arm64의 경우 graviton인스턴스가 선택되어 가장 저렴하지만, 별도 build runner를 돌려야 하므로 예제의 경우에는 x86_64를 권장
+    cpu_architecture = # TODO: x86_64, ARM64 중 선택
     operating_system_family = "LINUX"
   }
   requires_compatibilities = ["FARGATE"]
-  task_role_arn = aws_iam_role.task_role_api.arn
-  execution_role_arn = aws_iam_role.execution_role.arn
+  task_role_arn = # TODO: 해당 서비스를 위한 TASK ROLE ARN 지정
+  execution_role_arn = # TODO: 해당 서비스를 위한 TASK EXECUTION ROLE ARN 지정
+  
+  # task_role: 컨테이너 앱이 AWS API 호출 시 사용
+  # execution_role: ECS가 이미지 pull·로그·시크릿 주입 등 플랫폼 유지보수를 위한 작업 시 사용
+
+  # 참고: docker 이미지 정의를 기반으로 수정해야한다.
   container_definitions = jsonencode([
     {
-      name         = var.name
+      name         = "${var.name}-api-server"
       image        = "${aws_ecr_repository.api-server.repository_url}:latest"
       networkMode  = "awsvpc"
       portMappings = [
@@ -87,23 +92,14 @@ resource aws_security_group "api-server" {
   vpc_id = aws_vpc.main.id
 
   # TODO: ALB -> API ECS 태스크에 들어오는 tcp 트래픽을 허용
-  # 힌트: ingress는 ALB SG에서 api_port로, egress는 외부 이미지/로그 전송을 위해 열어둘 것
+  # 힌트: ingress는 ALB SG에서 api_port로
+  
+  # TODO: ECS -> http / https egress 요청을 허용 해야, ecr pull, 외부 리소스 호출 등이 가능
+
+  # TODO: ECS -> rds egress요청 허용 필요, postgres는 5432 (30_rds에서 정의해도 좋음)
 
   tags   = {
       Name = "ecs-task-${var.name}-api-server-sg"
-  }
-}
-
-# API ECS 태스크에만 부착 — RDS는 서브넷 CIDR이 아니라 이 SG를 가진 ENI(워크로드 식별)에서만 5432 허용
-resource "aws_security_group" "ecs_api_rds_client" {
-  name   = "${var.name}-ecs-api-rds-client-sg"
-  vpc_id = aws_vpc.main.id
-
-  # TODO: API ECS 태스크에서 RDS로의 tcp 트래픽을 허용
-  # 힌트: DB 포트 5432로 나가는 egress 규칙을 별도 SG에 둬서 역할을 분리
-
-  tags = {
-    Name = "${var.name}-ecs-api-rds-client-sg"
   }
 }
 

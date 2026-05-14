@@ -1,10 +1,10 @@
 resource "aws_lb" "main" {
-  name = "${var.name}-alb"
-  internal = false
+  name               = "${var.name}-alb"
+  internal           = false
   load_balancer_type = "application"
-  security_groups = [aws_security_group.alb.id]
+  security_groups    = [aws_security_group.alb.id]
   # concat으로 default & public 모두에 골고루 배치되도록
-  subnets         = [for x in aws_subnet.public: x.id]  # aws_subnet.public[*].id
+  subnets = [for x in aws_subnet.public : x.id] # aws_subnet.public[*].id
 
   tags = {
     Name = "${var.name}-alb"
@@ -22,7 +22,7 @@ resource "aws_lb_listener" "main" {
     type = "fixed-response"
 
     fixed_response {
-      status_code = 403
+      status_code  = 403
       content_type = "text/plain"
       message_body = "Forbidden"
     }

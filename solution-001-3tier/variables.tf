@@ -1,13 +1,13 @@
 variable "name" {
   type        = string
   description = "생성할 리소스 이름"
-  default     = "example"
+  default     = "example-3tier"
 }
 
 variable "vpc_cidr" {
   type        = string
   description = "VPC CIDR 블록"
-  default     = "10.100.0.0/16"
+  default     = "10.101.0.0/16"
 }
 
 variable "zones" {

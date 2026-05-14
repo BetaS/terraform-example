@@ -28,6 +28,10 @@ resource "aws_iam_role" "github_actions" {
             # 예: "repo:${repo 소유자 계정명}/${repo 이름}:ref:refs/heads/${branch name}"
             # 힌트: 브랜치 ref 패턴과 environment 패턴을 함께 허용할 수 있음
             "token.actions.githubusercontent.com:sub" = [
+              "repo:${github_id}/flask-docker-example:ref:refs/heads/*",
+              "repo:${github_id}/react-docker-example:ref:refs/heads/*",
+              "repo:${github_id}/flask-docker-example:environment:*",
+              "repo:${github_id}/react-docker-example:environment:*"
             ]
           }
         }

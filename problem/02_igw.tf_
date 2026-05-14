@@ -1,12 +1,16 @@
 resource "aws_internet_gateway" "main" {
-  vpc_id = aws_vpc.main.id
+  vpc_id = # TODO: 앞서 정의한 vpc를 연결
 
   tags = {
     Name = "${var.name}-igw"
   }
 }
 
+# VPC 기본(main) 라우트 테이블에 인터넷으로 나가는 기본 경로를 붙인다.
+# 퍼블릭 서브넷이 이 테이블을 쓰면(또는 연결되면) 외부와 통신 가능해진다.
 resource "aws_route" "internet_access" {
-  # TODO: internet gateway에 모든 트래픽을 허용하는 route를 추가
-  # 힌트: VPC 메인 route table에 기본 경로(0.0.0.0/0)를 추가하고, 대상은 IGW
+  route_table_id         = # TODO: 앞서 정의한 vpc의 main route table을 불러와서 사용
+  destination_cidr_block = # TODO: 인터넷으로 나가야 하니 default route를 등록
+  gateway_id             = # TODO: 위에서 만든 Internet Gateway를 next hop으로 지정
+  # 힌트: aws_internet_gateway 리소스의 id 속성 참조
 }

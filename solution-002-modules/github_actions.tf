@@ -1,12 +1,8 @@
-data "aws_iam_role" "execution_role" {
-  name = "ecsTaskExecutionRole"
-}
-
 resource "aws_iam_openid_connect_provider" "github" {
   url = "https://token.actions.githubusercontent.com"
 
   client_id_list = [
-    "sts.amazonaws.com"  # AssumeRole 할 수 있도록 허용
+    "sts.amazonaws.com" # AssumeRole 할 수 있도록 허용
   ]
 
   thumbprint_list = [
@@ -44,44 +40,45 @@ resource "aws_iam_role" "github_actions" {
 }
 
 resource "aws_iam_policy" "github_actions" {
-    name        = "github-actions-deploy-policy"
-    description = "GitHub Actions Deploy Policy"
+  name        = "github-actions-deploy-policy"
+  description = "GitHub Actions Deploy Policy"
 
-    policy = jsonencode({
-        Version = "2012-10-17",
-        Statement = [
-        {
-            Effect = "Allow",
-            Action = [
-              "ecs:UpdateService",
-              "ecs:DescribeServices",
-              "ecs:ListTasks",
-              "ecs:DescribeTaskDefinition",
-              "ecs:RegisterTaskDefinition",
-              "ecr:GetAuthorizationToken",
-              "ecr:BatchCheckLayerAvailability",
-              "ecr:GetDownloadUrlForLayer",
-              "ecr:BatchGetImage",
-              "ecr:PutImage",
-              "ecr:UploadLayerPart",
-              "ecr:CompleteLayerUpload",
-              "ecr:InitiateLayerUpload"
-            ],
-            Resource = "*"
-        },
-        {
-          "Effect": "Allow",
-          "Action": "iam:PassRole",
-          "Resource": [
-            data.aws_iam_role.execution_role.arn,
-            module.dev-api-server.task_role.arn,
-            module.dev-web-server.task_role.arn,
-            module.prod-api-server.task_role.arn,
-            module.prod-web-server.task_role.arn,
-          ]
-        }
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "ecs:UpdateService",
+          "ecs:DescribeServices",
+          "ecs:ListTasks",
+          "ecs:DescribeTaskDefinition",
+          "ecs:RegisterTaskDefinition",
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:PutImage",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:InitiateLayerUpload"
+        ],
+        Resource = "*"
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : "iam:PassRole",
+        "Resource" : [
+          aws_iam_role.ecs_execution_dev.arn,
+          aws_iam_role.ecs_execution_prod.arn,
+          module.dev-api-server.task_role.arn,
+          module.dev-web-server.task_role.arn,
+          module.prod-api-server.task_role.arn,
+          module.prod-web-server.task_role.arn,
         ]
-    })
+      }
+    ]
+  })
 }
 
 resource "aws_iam_role_policy_attachment" "github_actions_attach_policy" {

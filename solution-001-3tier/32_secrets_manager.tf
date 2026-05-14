@@ -16,6 +16,7 @@ resource "random_password" "rds" {
 resource "aws_secretsmanager_secret" "rds" {
   name        = "${var.name}-rds"
   description = "RDS connection info for ${var.name}"
+  recovery_window_in_days = 0
   tags = {
     Name = "${var.name}-rds"
   }
@@ -30,5 +31,25 @@ resource "aws_secretsmanager_secret_version" "rds" {
     username = aws_db_instance.rds.username
     password = random_password.rds.result
     database = aws_db_instance.rds.db_name
+  })
+}
+
+
+resource "aws_iam_role_policy" "task_role_api_rds_secret" {
+  name = "ecsTaskRole-${var.name}-api-rds-secret"
+  role = aws_iam_role.task_role_api.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = aws_secretsmanager_secret.rds.arn
+      }
+    ]
   })
 }

@@ -15,8 +15,7 @@ resource "aws_eip" "nat_gw" {
   # NAT GW 갯수 만큼 EIP 할당
   count = length(var.zones)
 
-  # NAT GW용 EIP 할당 하기 전에, 존재하는지 확인해서 삭제하고 새로만드는 역할
-  # 실행할때마다 매번 새로붙이는 것은 아니고, 없으면 만드는 역할도 수행
+  # EIP를 재정의 하게 될 때 기존것을 삭제하고 만드는것이 아닌, 만들고 기존것을 삭제 (graceful delete)
   lifecycle {
     create_before_destroy = true
   }

@@ -1,18 +1,33 @@
+# 인터넷을 향하는 Application Load Balancer. 퍼블릭 서브넷에 두고 ALB 전용 보안 그룹을 붙인다.
 resource "aws_lb" "main" {
-  name = "${var.name}-alb"
-  internal = false
+  name               = "${var.name}-alb"
+  internal           = false
   load_balancer_type = "application"
-  
-  # TODO: ALB의 보안 그룹과 서브넷 연결
-  # 힌트: ALB SG 하나와 public subnet 전체를 연결
-  # TODO: public subnet 모두에 골고루 배치되도록 서브넷 연결
+
+  security_groups = # TODO: ALB에 붙일 보안 그룹 ID 목록
+  # 힌트: ALB용 aws_security_group 리소스의 id (힌트: 리스트로 정의해줘야함)
+
+  subnets = # TODO: ALB를 배치할 퍼블릭 서브넷 ID 목록 (가용 영역마다 하나씩 두는 것이 일반적)
+  # 힌트: 배열 전체를 가져올때는 list comprehension (`[for x in resource.name : x]`) 또는 와일드카드 `resource.name[*]` 형태 로 가능
 
   tags = {
     Name = "${var.name}-alb"
   }
 }
 
+# 기본 리스너: listener rule과 매칭되지 않을 때 403 고정 응답으로 임의 접근을 줄이는 패턴
 resource "aws_lb_listener" "main" {
-  # TODO: ALB에 기본 80 포트 / 아무 rule 과 매칭 안되었을때 403 에러를 띄워 임의 접근을 차단
-  # 힌트: HTTP 80 리스너를 만들고, 기본 동작은 fixed-response 403
+  load_balancer_arn = # TODO: 위에서 만든 ALB의 ARN
+  port              = # TODO: 리스너 포트
+  protocol          = # TODO: 이 리스너가 받을 프로토콜
+
+  # rule과 매칭되지 않은 경우 기본 응답을 403으로 거부하는 동작
+  default_action {
+    type = "fixed-response"
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "Forbidden"
+      status_code  = "403"
+    }
+  }
 }

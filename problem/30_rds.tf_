@@ -3,8 +3,8 @@ resource "aws_db_instance" "rds" {
   engine               = "postgres"
   instance_class       = "db.t3.medium"
   allocated_storage    = 20
-  db_name              = "${var.name}-db"
-  username             = "${var.name}-user"
+  db_name              = "my_db"
+  username             = "db_user"
   password             = # TODO: 패스워드는 랜덤으로 생성된 값을 사용
   # 힌트: secrets 관련 파일에서 생성한 랜덤 비밀번호 값을 참조
   multi_az             = length(var.zones) > 1

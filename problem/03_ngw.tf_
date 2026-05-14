@@ -1,19 +1,22 @@
+# NAT Gateway는 퍼블릭 서브넷에 올리고, Elastic IP를 붙인다.
+# 프라이빗 서브넷의 기본 라우트(0.0.0.0/0)는 보통 이 NAT를 가리키게 만든다(연결은 편의상 private_subnet 정의에서 정의).
 resource "aws_nat_gateway" "nat_gw" {
-  # TODO: var.zones 를 순회하며 NAT GW를 생성
-  # NAT GW는 AZ 수 만큼 만들어줘야 고가용성이 유지 됨
-  # 힌트: NAT GW도 AZ 수만큼 만들고, 같은 인덱스의 EIP와 public subnet을 연결
+  count = # TODO: var.zones 길이만큼 NAT을 만든다 (AZ마다 하나씩 두면 고가용에 유리)
+
+  allocation_id = # TODO: 같은 count.index의 NAT 전용 Elastic IP ID
+  subnet_id     = # TODO: 같은 count.index의 퍼블릭 서브넷 ID (NAT은 public에 위치)
+  # 힌트: aws_eip / aws_subnet.public 리소스와 [count.index] 참조
 
   tags = {
     Name = "${var.name}-nat-gw-${count.index}"
   }
 }
 
+# NAT마다 고정 공인 IP가 필요하므로 EIP를 NAT 개수와 동일하게 둔다.
 resource "aws_eip" "nat_gw" {
-  # NAT GW 갯수 만큼 EIP 할당
-  count = length(var.zones)
+  count = # TODO: NAT Gateway 개수와 동일하게 맞출 것
 
-  # NAT GW용 EIP 할당 하기 전에, 존재하는지 확인해서 삭제하고 새로만드는 역할
-  # 실행할때마다 매번 새로붙이는 것은 아니고, 없으면 만드는 역할도 수행
+  # EIP를 재정의 하게 될 때 기존것을 삭제하고 만드는것이 아닌, 만들고 기존것을 삭제 (graceful delete)
   lifecycle {
     create_before_destroy = true
   }

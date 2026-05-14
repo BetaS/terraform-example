@@ -13,6 +13,7 @@ resource "aws_cloudwatch_log_group" "api-server" {
 resource "aws_ecr_repository" "api-server" {
   name                 = "${var.name}-api-server"
   image_tag_mutability = "MUTABLE"
+  force_delete = true
   image_scanning_configuration {
     scan_on_push = false
   }
@@ -200,25 +201,6 @@ resource "aws_iam_role" "task_role_api" {
         Principal = {
           Service = "ecs-tasks.amazonaws.com"
         }
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy" "task_role_api_rds_secret" {
-  name = "ecsTaskRole-${var.name}-api-rds-secret"
-  role = aws_iam_role.task_role_api.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "secretsmanager:GetSecretValue",
-          "secretsmanager:DescribeSecret"
-        ]
-        Resource = aws_secretsmanager_secret.rds.arn
       }
     ]
   })

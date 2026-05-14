@@ -1,12 +1,12 @@
 resource "aws_ecs_service" "service" {
-  name = var.name
-  cluster = aws_ecs_cluster.cluster.id
-  task_definition = aws_ecs_task_definition.service.arn
-  desired_count = 0  # 처음에 0으로 시작하고, 가동 준비가 완료되면 직접 1로 변경해준다.
+  name                 = var.name
+  cluster              = var.ecs_cluster_id
+  task_definition      = aws_ecs_task_definition.service.arn
+  desired_count        = 0 # 처음에 0으로 시작하고, 가동 준비가 완료되면 직접 1로 변경해준다.
   force_new_deployment = true
   network_configuration {
-    security_groups = [aws_security_group.service.id]
-    subnets = aws_subnet.private[*].id
+    security_groups  = [aws_security_group.service.id]
+    subnets          = var.subnet_ids
     assign_public_ip = false
   }
   load_balancer {
@@ -29,14 +29,8 @@ resource "aws_ecs_service" "service" {
       capacity_provider = capacity_provider_strategy.value.capacity_provider
       weight            = capacity_provider_strategy.value.weight
       # lookup은 element의 key-value 버전, 3번째 parameter를 default 값으로 취급해서 null-safe 하게 만들어 줌
-      base              = lookup(capacity_provider_strategy.value, "base", null)
+      base = lookup(capacity_provider_strategy.value, "base", null)
     }
-  }
-
-  capacity_provider_strategy {
-    capacity_provider = "FARGATE"
-    base             = 1
-    weight           = 1
   }
 
   lifecycle {

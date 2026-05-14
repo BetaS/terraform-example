@@ -1,6 +1,6 @@
 resource "aws_vpc" "main" {
   cidr_block            = # TODO: CIDR 변수에서 불러오기
-  # 힌트: variables 파일에 선언된 VPC CIDR 변수를 참조
+
   enable_dns_hostnames  = true
   enable_dns_support    = true
   tags = {

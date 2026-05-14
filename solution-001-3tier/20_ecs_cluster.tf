@@ -5,18 +5,7 @@ resource "aws_ecs_cluster" "cluster" {
 # Fargate가 이미지 pull, CloudWatch Logs 전송 등에 사용하는 역할
 resource "aws_iam_role" "execution_role" {
   name = "ecsTaskExecutionRole-${var.name}"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-      }
-    ]
-  })
+  assume_role_policy = data.aws_iam_policy_document.ecs_tasks_assume.json
 }
 
 resource "aws_iam_role_policy_attachment" "execution_role" {
