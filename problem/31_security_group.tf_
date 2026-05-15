@@ -16,3 +16,23 @@ resource "aws_security_group" "rds" {
     Name = "${var.name}-rds-sg"
   }
 }
+
+resource "aws_security_group_rule" "rds_to_api_ingress" {
+  type            = # TODO: ingress / egress 지정
+  from_port       = # TODO: db포트
+  to_port         = # TODO: db포트
+  protocol        = "tcp"
+
+  security_group_id = # TODO: RDS의 SG ID
+  source_security_group_id = # TODO: API ECS의 SG ID
+}
+
+resource "aws_security_group_rule" "api_to_rds_egress" {
+  type            = # TODO: ingress / egress 지정
+  from_port       = # TODO: db포트
+  to_port         = # TODO: db포트
+  protocol        = "tcp"
+
+  security_group_id = # TODO: API ECS의 SG ID
+  source_security_group_id = # TODO: RDS의 SG ID
+}

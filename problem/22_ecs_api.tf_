@@ -83,10 +83,31 @@ resource "aws_ecs_service" "api-server" {
   # 5. 로드밸런서와 연결하고
   # 6. 용량 전략(FARGATE_SPOT)을 설정한다.
   # 힌트: ecs_service에서 자주 쓰는 상위 속성과 nested block을 직접 찾아서 조합
+  cluster = # TODO: 앞서 정의한 ecs cluster 지정
+  task_definition = # TODO: 앞서 정의한 task definition 지정
+  desired_count = # TODO: 처음에는 ECR 배포 안되었 0개로 시작, CI/CD 성공 이후 1개 이상으로 변경
+  # ignore_changes에 desired_count가 등록되어, 실제로는 AWS콘솔(웹)에서 해줘야함
+
+  network_configuration {
+    subnets = # TODO: private subnet 전체에 걸쳐서 배포
+    security_groups = [aws_security_group.api-server.id]
+    assign_public_ip = false
+  }
+
+  load_balancer {
+    container_name = # TODO: task_definition내의 container name 등록
+    container_port = # TODO: task_definition내의 container port 등록
+    target_group_arn = aws_lb_target_group.api-server.arn
+  }
 
   deployment_circuit_breaker {
     enable   = true
     rollback = true
+  }
+
+  capacity_provider_strategy {
+    capacity_provider = # TODO: FARGATE_SPOT 타입으로 지정
+    weight = 1
   }
 
   lifecycle {
@@ -119,11 +140,20 @@ resource "aws_security_group_rule" "lb_to_api_server_egress" {
 resource "aws_lb_target_group" "api-server" {
   name                  = "alb-tg-${var.name}-api-server"
 
-  # TODO: lb target group 생성
-  # 1. listen port 등록
-  # 2. health check 방식 설정
-  # 3. deregistration delay 설정 (30s로 설정해야 spot instance가 SIGTERM을 받았을 때, 컨테이너가 종료되기 전에 ALB에서 먼저 제거되도록 설정)
-  # 힌트: Fargate 태스크를 직접 붙일 것이므로 target type, health check path, deregistration delay를 고민
+  port = # TODO: ecs task의 listen port
+  protocol = "HTTP"
+  vpc_id = aws_vpc.main.id
+  target_type = "ip"
+  deregistration_delay = # TODO: deregistration delay 설정 (30s로 설정해야 spot instance가 SIGTERM을 받았을 때, 컨테이너가 종료되기 전에 ALB에서 먼저 제거되도록 설정)
+
+  health_check {
+    interval            = 120
+    path                = # TODO: health check 경로 (web: /, api: /api/check)
+    timeout             = 60
+    matcher             = # TODO: HTTP코드 2xx를 허용
+    healthy_threshold   = 5
+    unhealthy_threshold = 5
+  }
 
   lifecycle {
     create_before_destroy = true
@@ -132,10 +162,20 @@ resource "aws_lb_target_group" "api-server" {
 
 resource aws_lb_listener_rule "api-server" {
   listener_arn = aws_lb_listener.main.arn
-  priority     = 100
+  priority     = # TODO: LB 규칙 적용 우선순위 지정, 숫자가 클 수록 나중에 적용
 
   # TODO: 특정 경로 (/api/*) 일때 ALB -> API ECS 태스크로의 tcp 트래픽 forward 설정
   # 힌트: action 블록은 target group으로 forward, condition 블록은 path_pattern 사용
+  action {
+    type = "forward"
+    target_group_arn = aws_lb_target_group.api-server.arn
+  }
+
+  condition {
+    path_pattern {
+      values = # TODO: 특정 경로를 해당 컨테이너로 라우팅 (ex: {/api/, /api/*} -> api, {/, /*} -> web)
+    }
+  }
 }
 
 resource "aws_iam_role" "task_role_api" {

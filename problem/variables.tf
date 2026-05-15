@@ -4,22 +4,10 @@ variable "name" {
   default = "example"
 }
 
-variable "public_cidr" {
+variable "vpc_cidr" {
   type = string
   description = "VPC CIDR 블록"
   default = "10.100.0.0/16"
-}
-
-variable "private_cidr" {
-  type = string
-  description = "ECS CIDR 블록"
-  default = "10.101.0.0/16"
-}
-
-variable "db_cidr" {
-  type = string
-  description = "DB CIDR 블록"
-  default = "10.102.0.0/16"
 }
 
 variable "zones" {

@@ -1,7 +1,7 @@
 resource "aws_subnet" "database" {
   count = length(var.zones)
   vpc_id = aws_vpc.main.id
-  cidr_block = cidrsubnet(var.db_cidr, 8, count.index)
+  cidr_block = # TODO: DB서브넷 정의 (힌트: public + private 갯수 다음부터 offset 으로 시작)
   availability_zone = element(var.zones, count.index)
   map_public_ip_on_launch = false
   tags = {
